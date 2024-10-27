@@ -5,6 +5,8 @@ import torch.nn.functional as F
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+import numpy as  np
+import random
 
 # Veriyi normalize etmek için transform işlemi.
 # Birden fazla ön işleme adımını sırayla uygulamak için kullanılır.
@@ -133,6 +135,30 @@ for epoch in range(1, epochs + 1):
     test_losses.append(test_loss)
     test_accuracies.append(test_acc)
 
+# Loggsoftmax aktivasyon fonksiyonu grafiği çizdiren fonksiyon
+def plot_logsoftmax():
+    # Giriş değerleri oluşturma (-10 ile 10 arasında 100 değer)
+    x_values = np.linspace(-10, 10, 100)
+
+    # LogSoftmax fonksiyonunu uygula
+    x_tensor = torch.tensor(x_values, dtype=torch.float32).unsqueeze(0)  # 2 boyutlu hale getir
+    y_values = F.log_softmax(x_tensor, dim=1).squeeze().detach().numpy()
+
+    # Grafiği çizdir
+    plt.figure(figsize=(10, 5))
+    plt.plot(x_values, y_values, label='LogSoftmax', color='blue')
+    plt.xlabel("Giriş Değerleri")
+    plt.ylabel("LogSoftmax Çıkış Değerleri")
+    plt.title("LogSoftmax Aktivasyon Fonksiyonu Grafiği")
+    plt.axhline(0, color='black', lw=0.5, ls='--')  # Y ekseninde sıfır çizgisi
+    plt.axvline(0, color='black', lw=0.5, ls='--')  # X ekseninde sıfır çizgisi
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+# LogSoftmax grafiğini çizme fonksiyonunu çağır
+plot_logsoftmax()
+
 # Eğitim ve test sonuçlarını görselleştirme
 plt.figure(figsize=(10, 5))
 plt.subplot(1, 2, 1)
@@ -148,3 +174,34 @@ plt.title('Dönemler Süresince Doğruluk')
 plt.legend()
 
 plt.show()
+
+# Test veri setinden rastgele bir örnek seçelim
+def visualize_random_test_sample(model, device, test_loader):
+    # Test veri setinden rastgele bir örnek alınır
+    # Örneğin 0. indisli görseli seçebilirsiniz veya random bir örnek almak için
+    # index = np.random.randint(len(test_dataset)) kullanılabilir
+    index = np.random.randint(len(test_dataset))
+    image, label = test_dataset[index]
+
+    # Modeli değerlendirme moduna al
+    model.eval()
+
+    # Girişi uygun forma getir ve cihazına gönder (CPU veya GPU)
+    image = image.to(device).unsqueeze(0)  # Modelin beklediği boyuta uyacak şekilde yeniden boyutlandırıyoruz
+
+    # Modeli kullanarak tahmin yap
+    with torch.no_grad():
+        output = model(image)
+        predicted_label = output.argmax(dim=1, keepdim=True).item()
+
+    # Sonuçları yazdır
+    print(f"Gerçek etiket: {label}")
+    print(f"Tahmin edilen etiket: {predicted_label}")
+
+    # Görseli göster
+    plt.imshow(image.cpu().squeeze(), cmap='gray')
+    plt.title(f"Gerçek: {label}, Tahmin: {predicted_label}")
+    plt.axis('off')
+    plt.show()
+# Test veri setinden rastgele bir örneği tahmin edip görselleştirelim
+visualize_random_test_sample(model, device, test_loader)
